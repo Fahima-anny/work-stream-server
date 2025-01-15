@@ -1,5 +1,6 @@
 const express = require("express") ;
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const app = express() ;
 const cors = require('cors')
 require('dotenv').config() ;
@@ -24,6 +25,14 @@ async function run() {
   try {
 
     const userCollection = client.db("workStreamDB").collection("users");
+
+
+    // jwt api 
+    app.post("/jwt", async (req, res) => {
+      const user = req.body ;
+      const token = jwt.sign(user, process.env.VITE_SECRET_KEY, {expiresIn: '5h'}) ;
+      res.send({token}) ;
+    })
 
 
     // users api 
@@ -73,17 +82,14 @@ app.get("/users/admin/:email", async(req, res) => {
     res.send({admin})
 })
 
-// app.get("/users/:email", async(req, res) => {
-//   const email = req.params.email ;
-//   console.log(email);
-//   const query = {email: email} ;
-//   const user = await userCollection.findOne(query) ;
-//   let userAvailable = false ;
-//   if(user){
-//   userAvailable = true ;
-//   } 
-//   return({userAvailable}) ;
-// })
+app.get("/users/:email", async(req, res) => {
+  const email = req.params.email ;
+  console.log(email);
+  const query = {email: email} ;
+  const user = await userCollection.findOne(query) ;
+  console.log(user.role);
+res.send(user.role) ;
+})
 
 app.get("/users/hr/:email", async(req, res) => {
     const email = req.params.email ;
