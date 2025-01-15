@@ -25,12 +25,78 @@ async function run() {
 
     const userCollection = client.db("workStreamDB").collection("users");
 
+
+    // users api 
 app.post("/users", async(req, res) => {
     const userInfo = req.body ;
     console.log(userInfo);
+
+    // if user already exits dont insert user 
+    const query = {email: userInfo.email} ;
+    const userExits = await userCollection.findOne(query) ;
+    if(userExits){
+      return res.send({message: "user already exists", insertedId: null})
+    }
+
+    // if not insert user 
     const result = await userCollection.insertOne(userInfo) ;
     res.send(result) ;
 })
+
+app.put("/users/:email", async(req, res) => {
+const updatedInfo = req.body ;
+const filter = {email: req.params.email} ;
+const options = { upsert: true } ;
+const updateDoc = {
+  $set: {
+   salary: updatedInfo.salary,
+   image: updatedInfo.image,
+   bankAcc: updatedInfo.bankAcc,
+   designation: updatedInfo.designation,
+   role: "Employee",
+   isVerified: false,
+   isActive: true,
+  },
+};
+const result = await userCollection.updateOne(filter,updateDoc,options) ;
+res.send(result) ;
+})
+
+app.get("/users/admin/:email", async(req, res) => {
+    const email = req.params.email ;
+    const query = {email: email} ;
+    const user = await userCollection.findOne(query) ;
+    let admin = false ;
+    if(user){
+        admin = user?.role === "admin" ;
+    }
+    res.send({admin})
+})
+
+// app.get("/users/:email", async(req, res) => {
+//   const email = req.params.email ;
+//   console.log(email);
+//   const query = {email: email} ;
+//   const user = await userCollection.findOne(query) ;
+//   let userAvailable = false ;
+//   if(user){
+//   userAvailable = true ;
+//   } 
+//   return({userAvailable}) ;
+// })
+
+app.get("/users/hr/:email", async(req, res) => {
+    const email = req.params.email ;
+    const query = {email: email} ;
+    const user = await userCollection.findOne(query) ;
+    let hr = false ;
+    if(user){
+        hr = user?.role === "HR" ;
+    }
+    res.send({hr}) ;
+})
+
+
 
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
