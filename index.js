@@ -25,6 +25,7 @@ async function run() {
   try {
 
     const userCollection = client.db("workStreamDB").collection("users");
+    const workSheetCollection = client.db("workStreamDB").collection("work-sheet");
 
 // all verify api 
 // verify Token Middleware 
@@ -39,7 +40,7 @@ jwt.verify(token, process.env.VITE_SECRET_KEY, (err, decoded) => {
     return res.status(401).send({message: "Unauthorized Access"}) ;
   }
   req.decoded = decoded ;
-  console.log("decoded",decoded.role);
+  // console.log("decoded",decoded.role);
   next() ;
 })
 }
@@ -75,6 +76,26 @@ const verifyEmployee = (req, res, next) => {
       const token = jwt.sign(user, process.env.VITE_SECRET_KEY, {expiresIn: '5h'}) ;
       res.send({token}) ;
     })
+
+
+    // work sheet related api 
+app.post("/work-sheet", async(req, res) => {
+  const workSheetData = req.body ;
+  // console.log(workSheetData);
+  const result = await workSheetCollection.insertOne(workSheetData) ;
+  res.send(result)
+})
+
+
+app.get("/work-sheet/:email", async(req, res) => {
+  const email = req.params.email ;
+  const query = {email: email} ;
+  console.log(email);
+  const result = await workSheetCollection.find(query).toArray() ;
+  res.send(result)
+})
+
+
 
     // users api 
 app.post("/users", async(req, res) => {
