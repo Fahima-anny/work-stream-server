@@ -1,5 +1,5 @@
 const express = require("express") ;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const app = express() ;
 const cors = require('cors')
@@ -84,6 +84,12 @@ app.post("/work-sheet", async(req, res) => {
   // console.log(workSheetData);
   const result = await workSheetCollection.insertOne(workSheetData) ;
   res.send(result)
+})
+
+app.delete("/work-sheet", async(req, res) => {
+  const workId = req.params.id ;
+  const query = {_id : new ObjectId(workId)} ;
+  const result = await workSheetCollection.deleteOne(query)
 })
 
 
