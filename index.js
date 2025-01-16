@@ -26,6 +26,48 @@ async function run() {
 
     const userCollection = client.db("workStreamDB").collection("users");
 
+// all verify api 
+// verify Token Middleware 
+const verifyToken = (req, res, next) => {
+  // console.log("inside verify token",req.headers.authorization);
+  if(!req.headers.authorization){
+   return res.status(401).send({message: "Unauthorized Access"}) ;
+  }
+  const token = req.headers.authorization.split(" ")[1] ;
+jwt.verify(token, process.env.VITE_SECRET_KEY, (err, decoded) => {
+  if(err){
+    return res.status(401).send({message: "Unauthorized Access"}) ;
+  }
+  req.decoded = decoded ;
+  console.log("decoded",decoded.role);
+  next() ;
+})
+}
+
+const verifyAdmin = (req, res, next) => {
+  const role = req.decoded.role ;
+  if(role !== "admin"){
+    return res.status(403).send({message: "Forbidden Access"})
+  }
+  next()
+}
+
+const verifyHR = (req, res, next) => {
+  const role = req.decoded.role ;
+  if(role !== "HR"){
+    return res.status(403).send({message: "Forbidden Access"})
+  }
+  next()
+}
+
+const verifyEmployee = (req, res, next) => {
+  const role = req.decoded.role ;
+  if(role !== "Employee"){
+    return res.status(403).send({message: "Forbidden Access"})
+  }
+  next()
+}
+
 
     // jwt api 
     app.post("/jwt", async (req, res) => {
@@ -34,11 +76,10 @@ async function run() {
       res.send({token}) ;
     })
 
-
     // users api 
 app.post("/users", async(req, res) => {
     const userInfo = req.body ;
-    console.log(userInfo);
+    // console.log(userInfo);
 
     // if user already exits dont insert user 
     const query = {email: userInfo.email} ;
@@ -71,36 +112,51 @@ const result = await userCollection.updateOne(filter,updateDoc,options) ;
 res.send(result) ;
 })
 
-app.get("/users/admin/:email", async(req, res) => {
-    const email = req.params.email ;
-    const query = {email: email} ;
-    const user = await userCollection.findOne(query) ;
-    let admin = false ;
-    if(user){
-        admin = user?.role === "admin" ;
-    }
-    res.send({admin})
-})
-
 app.get("/users/:email", async(req, res) => {
   const email = req.params.email ;
-  console.log(email);
+  // console.log(email);
   const query = {email: email} ;
   const user = await userCollection.findOne(query) ;
-  console.log(user.role);
-res.send(user.role) ;
+  // console.log(user.role);
+res.send(user?.role) ;
 })
 
-app.get("/users/hr/:email", async(req, res) => {
+
+app.get("/users/role/:email", verifyToken, async(req, res) => {
+
     const email = req.params.email ;
-    const query = {email: email} ;
-    const user = await userCollection.findOne(query) ;
-    let hr = false ;
-    if(user){
-        hr = user?.role === "HR" ;
+    const decodedEmail = req.decoded.email ;
+    const role = req.decoded.role ;
+    console.log(email,role);
+
+    if(email !== decodedEmail){
+      return res.status(403).send({message: "Forbidden Access"})
     }
-    res.send({hr}) ;
+
+    if(role === 'admin'){
+       return res.send('admin') ;
+    }
+
+    if(role === 'HR'){
+       return res.send('HR') ;
+    }
+    if(role === "Employee"){
+      return res.send('Employee')
+    }
+
 })
+
+
+// app.get("/users/hr/:email", async(req, res) => {
+//     const email = req.params.email ;
+//     const query = {email: email} ;
+//     const user = await userCollection.findOne(query) ;
+//     let hr = false ;
+//     if(user){
+//         hr = user?.role === "HR" ;
+//     }
+//     res.send({hr}) ;
+// })
 
 
 
