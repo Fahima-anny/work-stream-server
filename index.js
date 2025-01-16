@@ -86,10 +86,20 @@ app.post("/work-sheet", async(req, res) => {
   res.send(result)
 })
 
-app.delete("/work-sheet", async(req, res) => {
+// app.get("/work-sheet/:id", async(req, res) => {
+//   const workId = req.params.id ;
+//   // console.log(workSheetData);
+//   const query = {_id : new ObjectId(workId)}
+//   const result = await workSheetCollection.findOne(query) ;
+//   res.send(result)
+// })
+
+app.delete("/work-sheet/:id", async(req, res) => {
   const workId = req.params.id ;
+  console.log(workId);
   const query = {_id : new ObjectId(workId)} ;
-  const result = await workSheetCollection.deleteOne(query)
+  const result = await workSheetCollection.deleteOne(query) ;
+  res.send(result) ;
 })
 
 
