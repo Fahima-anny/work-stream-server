@@ -94,6 +94,22 @@ app.post("/work-sheet", async(req, res) => {
 //   res.send(result)
 // })
 
+app.patch("/work-sheet/:id", async(req, res) => {
+  const id = req.params.id ;
+  const updatedData = req.body ;
+  console.log(id);
+  const query = {_id: new ObjectId(id)} ;
+  const updateDoc = {
+    $set : {
+      task: updatedData.task,
+      date: updatedData.date,
+      hoursWorked: updatedData.hoursWorked,
+    }
+  }
+  const result = await workSheetCollection.updateOne(query, updateDoc) ;
+  res.send(result) ;
+})
+
 app.delete("/work-sheet/:id", async(req, res) => {
   const workId = req.params.id ;
   console.log(workId);
