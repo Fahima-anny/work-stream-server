@@ -63,7 +63,10 @@ const verifyHR = (req, res, next) => {
 
 const verifyEmployee = (req, res, next) => {
   const role = req.decoded.role ;
-  if(role !== "Employee"){
+  console.log("from verify employee", role);
+  const checkEmployee = role === "Employee"
+  if(!checkEmployee){
+    console.log("vul manus");
     return res.status(403).send({message: "Forbidden Access"})
   }
   next()
@@ -79,7 +82,7 @@ const verifyEmployee = (req, res, next) => {
 
 
     // work sheet related api 
-app.post("/work-sheet", async(req, res) => {
+app.post("/work-sheet", verifyToken, verifyEmployee, async(req, res) => {
   const workSheetData = req.body ;
   // console.log(workSheetData);
   const result = await workSheetCollection.insertOne(workSheetData) ;
@@ -94,7 +97,7 @@ app.post("/work-sheet", async(req, res) => {
 //   res.send(result)
 // })
 
-app.patch("/work-sheet/:id", async(req, res) => {
+app.patch("/work-sheet/:id", verifyToken, verifyEmployee, async(req, res) => {
   const id = req.params.id ;
   const updatedData = req.body ;
   console.log(id);
@@ -110,7 +113,7 @@ app.patch("/work-sheet/:id", async(req, res) => {
   res.send(result) ;
 })
 
-app.delete("/work-sheet/:id", async(req, res) => {
+app.delete("/work-sheet/:id", verifyToken, verifyEmployee , async(req, res) => {
   const workId = req.params.id ;
   console.log(workId);
   const query = {_id : new ObjectId(workId)} ;
@@ -119,7 +122,7 @@ app.delete("/work-sheet/:id", async(req, res) => {
 })
 
 
-app.get("/work-sheet/:email", async(req, res) => {
+app.get("/work-sheet/:email", verifyToken, async(req, res) => {
   const email = req.params.email ;
   const query = {email: email} ;
   console.log(email);
