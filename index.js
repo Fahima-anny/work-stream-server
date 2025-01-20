@@ -7,7 +7,14 @@ const cors = require('cors');
 const stripe = require("stripe")(process.env.VITE_STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://workstream-12.web.app",
+    ],
+  })
+);
 app.use(express.json());
 
 
@@ -28,6 +35,7 @@ async function run() {
     const userCollection = client.db("workStreamDB").collection("users");
     const workSheetCollection = client.db("workStreamDB").collection("work-sheet");
     const payrollCollection = client.db("workStreamDB").collection("payroll");
+    const adminMailCollection = client.db("workStreamDB").collection("adminMails");
 
     // all verify api 
     // verify Token Middleware 
@@ -54,6 +62,17 @@ async function run() {
       }
       next()
     }
+
+    app.post("/adminMails", verifyToken, async(req, res) => {
+      const mailData = req.body ;
+      const result = await adminMailCollection.insertOne(mailData) ;
+      res.send(result) ;
+    })
+
+    app.get("/adminMails", verifyToken, verifyAdmin,  async (req, res) => {
+const result = await adminMailCollection.find().toArray() ;
+res.send(result) ;
+    })
 
     const verifyHR = (req, res, next) => {
       const role = req.decoded.role;
@@ -146,7 +165,7 @@ async function run() {
       });
     })
 
-    app.get("/payroll/bar/:email", async (req, res) => {
+    app.get("/payroll/bar/:email", verifyToken, verifyHR, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await payrollCollection.aggregate([
@@ -162,7 +181,7 @@ async function run() {
         // Sort by year and month in ascending order
         { $sort: { yearNumeric: 1, monthNumeric: 1 } },
       ]).toArray()
-      console.log("bar chart", result);
+      // console.log("bar chart", result);
       res.send(result)
     })
 
@@ -190,8 +209,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/work-sheet", async (req, res) => {
-
+    app.get("/work-sheet", verifyToken, async (req, res) => {
       const result = await workSheetCollection.aggregate([
         {
           $lookup: {
@@ -243,7 +261,7 @@ async function run() {
     })
 
 
-    app.get("/work-sheet/:email", verifyToken, async (req, res) => {
+    app.get("/work-sheet/:email", verifyToken, verifyEmployee, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       // console.log(email);
@@ -355,7 +373,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/users/:email", async (req, res) => {
+    app.get("/users/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       // console.log(email);
       const query = { email: email };
@@ -396,7 +414,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/users/id/:id", async (req, res) => {
+    app.get("/users/id/:id", verifyToken, verifyHR, async (req, res) => {
       const id = req.params.id;
       // console.log(req);
       const query = { _id: new ObjectId(id) };
@@ -424,10 +442,10 @@ async function run() {
 
 
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
