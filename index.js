@@ -56,16 +56,13 @@ async function run() {
       next()
     }
 
-    app.post("/adminMails", verifyToken, async(req, res) => {
+    app.post("/adminMails", async(req, res) => {
       const mailData = req.body ;
       const result = await adminMailCollection.insertOne(mailData) ;
       res.send(result) ;
     })
 
-    app.get("/adminMails", verifyToken, verifyAdmin,  async (req, res) => {
-const result = await adminMailCollection.find().toArray() ;
-res.send(result) ;
-    })
+
 
     const verifyHR = (req, res, next) => {
       const role = req.decoded.role;
@@ -86,6 +83,11 @@ res.send(result) ;
       next()
     }
 
+    app.get("/adminMails", verifyToken, verifyAdmin,  async (req, res) => {
+      const result = await adminMailCollection.find().toArray() ;
+      console.log(result);
+      res.send(result) ;
+          })
 
     // jwt api 
     app.post("/jwt", async (req, res) => {
@@ -407,7 +409,7 @@ res.send(result) ;
       res.send(result);
     })
 
-    app.get("/users/id/:id", async (req, res) => {
+    app.get("/users/id/:id", verifyToken, verifyHR, async (req, res) => {
       const id = req.params.id;
       // console.log(req);
       const query = { _id: new ObjectId(id) };
