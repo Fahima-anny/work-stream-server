@@ -7,14 +7,7 @@ const cors = require('cors');
 const stripe = require("stripe")(process.env.VITE_STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://workstream-12.web.app",
-    ],
-  })
-);
+app.use(cors());
 app.use(express.json());
 
 
@@ -181,7 +174,7 @@ res.send(result) ;
         // Sort by year and month in ascending order
         { $sort: { yearNumeric: 1, monthNumeric: 1 } },
       ]).toArray()
-      // console.log("bar chart", result);
+      console.log("bar chart", result);
       res.send(result)
     })
 
@@ -261,7 +254,7 @@ res.send(result) ;
     })
 
 
-    app.get("/work-sheet/:email", verifyToken, verifyEmployee, async (req, res) => {
+    app.get("/work-sheet/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       // console.log(email);
@@ -373,7 +366,7 @@ res.send(result) ;
       res.send(result);
     })
 
-    app.get("/users/:email", verifyToken, async (req, res) => {
+    app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       // console.log(email);
       const query = { email: email };
@@ -414,7 +407,7 @@ res.send(result) ;
       res.send(result);
     })
 
-    app.get("/users/id/:id", verifyToken, verifyHR, async (req, res) => {
+    app.get("/users/id/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(req);
       const query = { _id: new ObjectId(id) };
@@ -442,10 +435,10 @@ res.send(result) ;
 
 
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
