@@ -56,10 +56,10 @@ async function run() {
       next()
     }
 
-    app.post("/adminMails", async(req, res) => {
-      const mailData = req.body ;
-      const result = await adminMailCollection.insertOne(mailData) ;
-      res.send(result) ;
+    app.post("/adminMails", async (req, res) => {
+      const mailData = req.body;
+      const result = await adminMailCollection.insertOne(mailData);
+      res.send(result);
     })
 
 
@@ -83,11 +83,11 @@ async function run() {
       next()
     }
 
-    app.get("/adminMails", verifyToken, verifyAdmin,  async (req, res) => {
-      const result = await adminMailCollection.find().toArray() ;
-      console.log(result);
-      res.send(result) ;
-          })
+    app.get("/adminMails", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await adminMailCollection.find().toArray();
+      // console.log(result);
+      res.send(result);
+    })
 
     // jwt api 
     app.post("/jwt", async (req, res) => {
@@ -126,11 +126,21 @@ async function run() {
 
       const page = parseInt(req.query.page) || 1;
       const size = parseInt(req.query.size) || 5;
+      const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
       const query = { email: email, transactionId: { $exists: true, $ne: null } };
       const totalCount = await payrollCollection.countDocuments(query);
 
-      const ddd = await payrollCollection.find(query).sort({ year: -1, month: -1 }).toArray()
+      //     if(sortOrder === 'desc'){
+      // // sorted in descending
+      // const ddd = await payrollCollection.find(query).sort({ year: -1, month: -1 }).toArray()
+      //     }
+
+      //     if(sortOrder === 'asc'){
+      // // sorted in ascending
+      // const ddd = await payrollCollection.find(query).sort({ year: 1, month: 1 }).toArray()
+      //     }
+
       // console.log(ddd);
 
       const result = await payrollCollection
@@ -145,7 +155,7 @@ async function run() {
             },
           },
           // Sort by year and month in descending order
-          { $sort: { yearNumeric: -1, monthNumeric: -1 } },
+          { $sort: { yearNumeric: sortOrder, monthNumeric: sortOrder } },
           // Skip and limit for pagination
           { $skip: (page - 1) * size },
           { $limit: size },
@@ -176,7 +186,7 @@ async function run() {
         // Sort by year and month in ascending order
         { $sort: { yearNumeric: 1, monthNumeric: 1 } },
       ]).toArray()
-      console.log("bar chart", result);
+      // console.log("bar chart", result);
       res.send(result)
     })
 
@@ -284,8 +294,28 @@ async function run() {
     })
 
     app.get("/users/verified", verifyToken, verifyAdmin, async (req, res) => {
+      const sortOrder = req.query.sortOrder;
       const query = { isVerified: true }
-      const users = await userCollection.find(query).toArray();
+
+let users ;
+
+if (sortOrder === "desc") {
+  users = await userCollection.aggregate([
+    { $match: query },
+    { $addFields: { salary: { $toDouble: "$salary" } } }, // Convert salary to number
+    { $sort: { salary: -1 } }, // Sort by salary in descending order
+  ]).toArray();
+} else if (sortOrder === "asc") {
+  users = await userCollection.aggregate([
+    { $match: query },
+    { $addFields: { salary: { $toDouble: "$salary" } } }, // Convert salary to number
+    { $sort: { salary: 1 } }, // Sort by salary in ascending order
+  ]).toArray();
+}
+      else {
+       users = await userCollection.find(query).toArray();
+      } 
+      
       res.send(users);
     })
 
@@ -402,9 +432,32 @@ async function run() {
 
     })
 
+    app.get("/user/data/:email", verifyToken, async (req, res) => {
+    const email = req.params.email ;
+    // console.log(email);
+    const query = {email: email} ;
+    const user = await userCollection.findOne(query);
+    res.send(user)
+    })
 
-    app.get("/users", async (req, res) => {
-      const users = await userCollection.find().toArray();
+      app.get("/users", async (req, res) => {
+        const sortOrder = req.query.sortOrder;
+        let users;
+      
+        if (sortOrder === "desc") {
+          users = await userCollection.aggregate([
+            { $addFields: { salary: { $toDouble: "$salary" } } },
+            { $sort: { salary: -1 } }, 
+          ]).toArray();
+        } else if (sortOrder === "asc") {
+          users = await userCollection.aggregate([
+            { $addFields: { salary: { $toDouble: "$salary" } } }, 
+            { $sort: { salary: 1 } }, 
+          ]).toArray();
+        } else {
+          users = await userCollection.find().toArray(); 
+        }
+
       const result = users.filter(u => u.role === "Employee")
       res.send(result);
     })
@@ -414,6 +467,12 @@ async function run() {
       // console.log(req);
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.get("/users/all-Users", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await userCollection.find().toArray();
+      // console.log(result);
       res.send(result);
     })
 
